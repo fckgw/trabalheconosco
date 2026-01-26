@@ -1,0 +1,20 @@
+<IfModule mod_rewrite.c>
+    Options +FollowSymLinks -MultiViews
+    
+    # Liga o motor de reescrita
+    RewriteEngine On
+
+    # 1. Define que o arquivo principal é o index.php
+    DirectoryIndex index.php
+
+    # 2. Permite acessar os arquivos sem digitar .php
+    # Exemplo: Digita 'site.com/vagas' e ele carrega 'vagas.php'
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+    # 3. Força HTTPS (Segurança na Locaweb)
+    # Se der erro no Localhost, coloque um # na frente das 2 linhas abaixo
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>

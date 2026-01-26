@@ -1,0 +1,65 @@
+/* style.css */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f8f9fa;
+    /* Adiciona uma textura sutil de fundo se desejar */
+    background-image: radial-gradient(#e9ecef 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Cor preta da Cedro */
+.bg-black {
+    background-color: #000000 !important;
+}
+
+/* Ajustes nos Cards */
+.card {
+    border-radius: 12px;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Botões */
+.btn-success {
+    background-color: #28a745;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+}
+
+.btn-dark {
+    background-color: #1a1a1a;
+    border: none;
+    font-weight: 600;
+}
+
+.btn-dark:hover {
+    background-color: #333;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+/* Campos de entrada */
+.form-control {
+    border: 1px solid #ddd;
+    padding: 10px;
+}
+.form-control:focus {
+    box-shadow: none;
+    border-color: #000;
+}
+
+.input-group-text {
+    border: 1px solid #ddd;
+}
