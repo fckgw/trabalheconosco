@@ -1,160 +1,43 @@
 <?php
-// --- CONFIGURAÇÃO ---
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-require_once 'includes/db.php';
-
-try {
-    $pdo = getDB();
-    // Busca apenas vagas abertas
-    $sql = "SELECT * FROM vagas WHERE status = 'aberta' ORDER BY id DESC";
-    $stmt = $pdo->query($sql);
-    $vagas = $stmt->fetchAll();
-} catch (Exception $e) {
-    die("Erro ao carregar vagas.");
-}
+ini_set('display_errors', 1); error_reporting(E_ALL); require_once 'includes/db.php';
+$pdo = getDB(); $vagas = $pdo->query("SELECT * FROM vagas WHERE status='aberta' ORDER BY id DESC")->fetchAll();
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vagas Abertas - Cedro Têxtil</title>
-    <!-- Bootstrap 5 -->
+    <meta charset="UTF-8"> <title>Vagas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    
-    <style>
-        body { font-family: 'Roboto', sans-serif; background-color: #f8f9fa; }
-        .bg-cedro { background-color: #000; }
-        
-        .hero-section {
-            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://source.unsplash.com/1600x900/?textile,factory');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 80px 0;
-            margin-bottom: 40px;
-        }
-
-        .card-vaga {
-            border: none;
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-vaga:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-        }
-
-        .card-body { flex: 1; padding: 1.5rem; }
-
-        .badge-tipo {
-            background-color: #f0f2f5;
-            color: #1a1a1a;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-        }
-
-        .btn-detalhes {
-            background-color: #fff;
-            color: #000;
-            border: 2px solid #000;
-            font-weight: 700;
-            width: 100%;
-            padding: 12px;
-            border-radius: 0 0 12px 12px;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-        }
-        .btn-detalhes:hover { background-color: #000; color: white; text-decoration: none; }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style> body{background:#f8f9fa;} .card-vaga{border:none;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.05);transition:0.3s;} .card-vaga:hover{transform:translateY(-5px);} </style>
 </head>
 <body>
-
-    <nav class="navbar navbar-dark bg-cedro sticky-top shadow">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="index.php">
-                <img src="logo-branco.png" alt="Cedro Têxtil" height="35" class="me-2">
-            </a>
-            <div class="d-flex">
-                <a href="index.php" class="btn btn-outline-light btn-sm rounded-pill px-3 me-2">
-                    <i class="fas fa-sign-in-alt me-1"></i> Login
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="hero-section text-center">
-        <div class="container">
-            <h1 class="display-4 fw-bold mb-3">Oportunidades de Carreira</h1>
-            <p class="lead text-light opacity-75">Faça parte de uma história de mais de 150 anos de inovação e tradição têxtil.</p>
-        </div>
-    </div>
-
-    <div class="container mb-5">
-        <?php if (count($vagas) > 0): ?>
-            <div class="row g-4">
-                <?php foreach($vagas as $vaga): ?>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card card-vaga">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <span class="badge badge-tipo"><?php echo $vaga['setor'] ?? 'Geral'; ?></span>
-                                    <small class="text-muted"><i class="fas fa-map-marker-alt"></i> <?php echo $vaga['localizacao'] ?? 'MG'; ?></small>
-                                </div>
-
-                                <h4 class="card-title fw-bold text-dark mb-3">
-                                    <?php echo htmlspecialchars($vaga['titulo']); ?>
-                                </h4>
-
-                                <p class="card-text text-secondary mb-4">
-                                    <?php echo nl2br(htmlspecialchars(substr($vaga['descricao'], 0, 100))); ?>...
-                                </p>
-
-                                <div class="mt-auto">
-                                    <small class="text-muted d-block mb-2">
-                                        <i class="fas fa-money-bill-wave text-success"></i> <?php echo $vaga['faixa_salarial']; ?>
-                                    </small>
-                                </div>
-                            </div>
-                            
-                            <!-- LINK ALTERADO PARA PÁGINA DE DETALHES -->
-                            <a href="detalhe_vaga.php?id=<?php echo $vaga['id']; ?>" class="btn btn-detalhes">
-                                VER DETALHES <i class="fas fa-arrow-right ms-2"></i>
-                            </a>
+    <nav class="navbar navbar-dark bg-dark mb-5"><div class="container"><a class="navbar-brand"><img src="logo-branco.png" height="30"></a><a href="index.php" class="btn btn-outline-light btn-sm">Login</a></div></nav>
+    <div class="container">
+        <h2 class="text-center mb-5 fw-bold">Oportunidades Abertas</h2>
+        <?php if(count($vagas)>0): ?>
+        <div class="row g-4">
+            <?php foreach($vagas as $v): 
+                $salario = ($v['ocultar_salario'] == 1) ? 'A combinar' : $v['faixa_salarial'];
+                $regime = $v['regime_contratacao'];
+                $cor = match($regime) { 'CLT'=>'bg-primary','Estágio'=>'bg-info','Temporário'=>'bg-warning text-dark', default=>'bg-secondary' };
+            ?>
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-vaga h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between mb-3"><span class="badge <?php echo $cor; ?>"><?php echo $regime; ?></span><small class="text-muted"><?php echo $v['localizacao']; ?></small></div>
+                        <h5 class="card-title fw-bold"><?php echo htmlspecialchars($v['titulo']); ?></h5>
+                        <p class="text-muted small"><?php echo $v['setor']; ?></p>
+                        <p class="card-text text-secondary mb-4 flex-grow-1"><?php echo nl2br(substr($v['descricao'], 0, 100)); ?>...</p>
+                        <div class="border-top pt-3 d-flex justify-content-between align-items-center">
+                            <strong class="text-success small"><i class="fas fa-money-bill-wave"></i> <?php echo $salario; ?></strong>
+                            <a href="detalhe_vaga.php?id=<?php echo $v['id']; ?>" class="btn btn-outline-dark btn-sm fw-bold">VER DETALHES</a>
                         </div>
                     </div>
-                <?php endforeach; ?>
+                </div>
             </div>
-        <?php else: ?>
-            <div class="text-center py-5 bg-white rounded shadow-sm">
-                <i class="fas fa-clipboard-list fa-4x text-muted mb-3 opacity-50"></i>
-                <h3 class="fw-bold text-secondary">Nenhuma vaga aberta no momento.</h3>
-                <p class="text-muted">Mas não se preocupe! Você pode cadastrar seu currículo em nosso banco de talentos.</p>
-                <a href="cadastro.php" class="btn btn-dark btn-lg mt-3 px-5 rounded-pill">Cadastrar Currículo Geral</a>
-            </div>
-        <?php endif; ?>
-    </div>
-
-    <footer class="text-center py-4 mt-5 bg-white border-top text-muted small">
-        <div class="container">
-            <p class="mb-0">&copy; <?php echo date('Y'); ?> Cedro Têxtil. Todos os direitos reservados.</p>
+            <?php endforeach; ?>
         </div>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <?php else: ?><div class="text-center py-5"><h4>Nenhuma vaga no momento.</h4><a href="cadastro.php" class="btn btn-dark">Banco de Talentos</a></div><?php endif; ?>
+    </div>
 </body>
 </html>
