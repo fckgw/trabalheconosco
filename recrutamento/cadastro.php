@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Formata CNH
         $cnhCompleta = ($_POST['possui_cnh'] == 'Sim') ? ($_POST['cnh_cat'] ?? '') . " - " . ($_POST['cnh_num'] ?? '') : "Não";
         
-        // Tratamento de campos opcionais
+        // Tratamento de campos opcionais e Internos
         $matricula = ($_POST['sou_funcionario'] ?? 0) ? $_POST['matricula'] : null;
         $unidade   = ($_POST['sou_funcionario'] ?? 0) ? $_POST['unidade_atual'] : null;
         $setor     = ($_POST['sou_funcionario'] ?? 0) ? $_POST['setor_atual'] : null;
@@ -82,18 +82,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $area   = $_POST['area_interesse'] ?? 'Geral';
         $pretensao = $_POST['pretensao'] ?? '';
 
+        // SQL INSERT
         $sql = "INSERT INTO candidatos (
             nome, cpf, rg, matricula, unidade_atual, setor_atual, cargo_atual_interno, gestor_imediato, data_admissao, ciente_gestor,
             nome_pai, nome_mae, email, senha, telefone, data_nascimento, estado_civil, genero,
             cep, endereco, numero_endereco, complemento, bairro, cidade, estado,
             nivel_ingles, nivel_espanhol, area_interesse, pretensao_salarial, cnh,
-            resumo_profissional, arquivo_curriculo
+            resumo_profissional, arquivo_curriculo, termo_lgpd
         ) VALUES (
             :nome, :cpf, :rg, :mat, :unid, :setor, :cargoint, :gestor, :adm, :ciente,
             :pai, :mae, :email, :senha, :tel, :nasc, :civil, :genero,
             :cep, :end, :num, :comp, :bairro, :cidade, :uf,
             :ingles, :esp, :area, :salario, :cnh,
-            :resumo, :arq
+            :resumo, :arq, 1
         )";
 
         $stmt = $pdo->prepare($sql);
@@ -160,12 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2 style='color: #000;'>Bem-vindo(a) à Cedro Têxtil</h2>
             <p>Olá <strong>" . $_POST['nome'] . "</strong>,</p>
             <p>Recebemos seu currículo com sucesso.</p>
+            <p style='background: #f8f9fa; padding: 10px; border-left: 4px solid #28a745;'><strong>Fique atento!</strong> Este é o canal oficial de comunicação da Cedro. Verifique sempre seu e-mail para novidades sobre o processo.</p>
             <div style='background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;'>
                 <strong>Seus Dados de Acesso:</strong><br>
                 Login: $cpfLimpo<br>
                 Senha: $senha_plain
             </div>
-            <p><small>Este é um e-mail automático.</small></p>
         </div>";
         
         $envio = $mailer->enviar($_POST['email'], $_POST['nome'], $assunto, $corpoHTML);
@@ -217,18 +218,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .box-interno { border: 1px solid #007bff; background-color: #f0f8ff; padding: 20px; border-radius: 8px; margin-top: 15px; }
         .box-interno label { color: #0056b3; }
 
-        /* Estilo para Cards de Experiência (Timeline Visual) */
-        .exp-card { 
-            border-left: 4px solid #000; 
-            background: #f8f9fa; 
-            padding: 15px; 
-            margin-bottom: 10px; 
-            border-radius: 4px;
-            position: relative;
-        }
+        /* Estilo Cards Exp */
+        .exp-card { border-left: 4px solid #000; background: #f8f9fa; padding: 15px; margin-bottom: 10px; border-radius: 4px; position: relative; }
         .exp-card h6 { margin-bottom: 2px; font-weight: bold; color: #000; }
         .exp-card .badge { font-weight: normal; margin-left: 5px; }
-        .exp-card p { font-size: 0.9rem; color: #555; margin-bottom: 0; white-space: pre-line; }
         .exp-card .btn-del { position: absolute; top: 10px; right: 10px; }
         .exp-empty { text-align: center; color: #999; padding: 20px; font-style: italic; border: 2px dashed #ddd; border-radius: 8px; }
     </style>
@@ -254,6 +247,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <i class="fas fa-check-circle fa-4x mb-3 text-success"></i>
                 <h2 class="fw-bold">Cadastro Realizado!</h2>
                 <p class="lead"><?php echo $mensagem; ?></p>
+                <div class="alert alert-warning d-inline-block">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Atenção:</strong> Fique atento às novidades por e-mail, nosso meio de comunicação oficial.
+                </div>
                 <?php if($senha_gerada): ?>
                     <div class="alert alert-light border mt-3 d-inline-block text-start">
                         <strong>Seus dados de acesso:</strong><br>
@@ -289,51 +285,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-3"><label class="form-label">RG *</label><input type="text" name="rg" class="form-control"></div>
                         <div class="col-md-6"><label class="form-label">Nome Completo *</label><input type="text" name="nome" id="nome" class="form-control"></div>
                         
-                        <!-- PAIS -->
                         <div class="col-md-6"><label class="form-label">Nome da Mãe</label><input type="text" name="nome_mae" class="form-control"></div>
                         <div class="col-md-6"><label class="form-label">Nome do Pai</label><input type="text" name="nome_pai" class="form-control"></div>
 
                         <div class="col-md-3"><label class="form-label">Nascimento *</label><input type="date" name="nascimento" id="nascimento" class="form-control"></div>
-                        
                         <div class="col-md-3">
                             <label class="form-label">Estado Civil</label>
-                            <select name="estado_civil" class="form-select">
-                                <option>Solteiro(a)</option>
-                                <option>Casado(a)</option>
-                                <option>União Estável</option>
-                                <option>Divorciado(a)</option>
-                                <option>Separado(a)</option>
-                                <option>Viúvo(a)</option>
-                            </select>
+                            <select name="estado_civil" class="form-select"><option>Solteiro(a)</option><option>Casado(a)</option><option>União Estável</option><option>Divorciado(a)</option><option>Separado(a)</option><option>Viúvo(a)</option></select>
                         </div>
-                        
                         <div class="col-md-3"><label class="form-label">Gênero</label><select name="genero" class="form-select"><option>Masculino</option><option>Feminino</option><option>Outro</option></select></div>
                         <div class="col-md-3"><label class="form-label">Celular *</label><input type="text" name="telefone" id="telefone" class="form-control"></div>
                         <div class="col-md-9"><label class="form-label">E-mail *</label><input type="email" name="email" id="email" class="form-control"></div>
                         
-                        <!-- ÁREA RECRUTAMENTO INTERNO -->
-                        <div class="col-12 mt-4">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="sou_funcionario" id="sou_funcionario" onchange="toggleInterno()">
-                                <label class="form-check-label fw-bold text-primary">Sou Funcionário (Vaga Interna)</label>
-                            </div>
-                        </div>
-                        
-                        <div class="col-12 d-none" id="box_interno">
-                            <div class="box-interno">
-                                <h6 class="fw-bold mb-3"><i class="fas fa-id-badge"></i> Dados Corporativos (Interno)</h6>
-                                <div class="row g-3">
-                                    <div class="col-md-3"><label>Matrícula *</label><input type="text" name="matricula" class="form-control border-primary"></div>
-                                    <div class="col-md-5"><label>Unidade Atual *</label><select name="unidade_atual" class="form-select"><option value="">Selecione...</option><option>Sete Lagoas - Fábrica</option><option>Sete Lagoas - Escritório</option><option>Belo Horizonte</option><option>Outra</option></select></div>
-                                    <div class="col-md-4"><label>Data de Admissão *</label><input type="date" name="data_admissao" class="form-control"></div>
-                                    <div class="col-md-4"><label>Setor Atual *</label><input type="text" name="setor_atual" class="form-control" placeholder="Ex: Fiação"></div>
-                                    <div class="col-md-4"><label>Cargo Atual *</label><input type="text" name="cargo_atual_interno" class="form-control" placeholder="Ex: Operador II"></div>
-                                    <div class="col-md-4"><label>Gestor Imediato *</label><input type="text" name="gestor_imediato" class="form-control"></div>
-                                    <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="ciente_gestor" id="ciente_gestor"><label class="form-check-label small">Estou ciente de que meu gestor será comunicado.</label></div></div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- RECRUTAMENTO INTERNO -->
+                        <div class="col-12 mt-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="sou_funcionario" id="sou_funcionario" onchange="toggleInterno()"><label class="form-check-label fw-bold text-primary">Sou Funcionário (Vaga Interna)</label></div></div>
+                        <div class="col-12 d-none" id="box_interno"><div class="box-interno"><h6 class="fw-bold mb-3"><i class="fas fa-id-badge"></i> Dados Corporativos</h6><div class="row g-3"><div class="col-md-3"><label>Matrícula *</label><input type="text" name="matricula" class="form-control border-primary"></div><div class="col-md-5"><label>Unidade Atual *</label><select name="unidade_atual" class="form-select"><option value="">Selecione...</option><option>Sete Lagoas - Fábrica</option><option>Sete Lagoas - Escritório</option><option>Belo Horizonte</option><option>Outra</option></select></div><div class="col-md-4"><label>Data de Admissão *</label><input type="date" name="data_admissao" class="form-control"></div><div class="col-md-4"><label>Setor Atual *</label><input type="text" name="setor_atual" class="form-control"></div><div class="col-md-4"><label>Cargo Atual *</label><input type="text" name="cargo_atual_interno" class="form-control"></div><div class="col-md-4"><label>Gestor Imediato *</label><input type="text" name="gestor_imediato" class="form-control"></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="ciente_gestor" id="ciente_gestor"><label class="form-check-label small">Estou ciente de que meu gestor será comunicado.</label></div></div></div></div></div>
 
+                        <!-- ENDEREÇO -->
                         <div class="col-12 mt-4"><h6 class="text-muted fw-bold">Endereço</h6></div>
                         <div class="col-md-3"><label class="form-label">CEP</label><input type="text" name="cep" id="cep" class="form-control"></div>
                         <div class="col-md-7"><label class="form-label">Rua</label><input type="text" name="endereco" id="rua" class="form-control"></div>
@@ -343,19 +311,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-2"><label class="form-label">UF</label><input type="text" name="estado" id="estado" class="form-control bg-light"></div>
                         <div class="col-md-12"><label class="form-label">Complemento</label><input type="text" name="complemento" class="form-control"></div>
 
+                        <!-- HABILITAÇÃO -->
                         <div class="col-12 mt-4"><h6 class="text-muted fw-bold">Habilitação</h6></div>
-                        <div class="col-md-3">
-                            <label class="form-label">Possui CNH?</label>
-                            <select name="possui_cnh" id="possui_cnh" class="form-select" onchange="toggleCNH()">
-                                <option value="Não">Não</option><option value="Sim">Sim</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 d-none cnh-box">
-                            <label class="form-label">Categoria</label>
-                            <select name="cnh_cat" class="form-select">
-                                <option value="A">A - Moto</option><option value="B">B - Carro</option><option value="AB">AB - Moto e Carro</option><option value="C">C - Caminhão</option><option value="AC">AC</option><option value="D">D - Ônibus</option><option value="AD">AD</option><option value="E">E - Carreta</option><option value="AE">AE</option>
-                            </select>
-                        </div>
+                        <div class="col-md-3"><label class="form-label">Possui CNH?</label><select name="possui_cnh" id="possui_cnh" class="form-select" onchange="toggleCNH()"><option value="Não">Não</option><option value="Sim">Sim</option></select></div>
+                        <div class="col-md-4 d-none cnh-box"><label class="form-label">Categoria</label><select name="cnh_cat" class="form-select"><option>A - Moto</option><option>B - Carro</option><option>AB - Moto e Carro</option><option>C - Caminhão</option><option>AC</option><option>D - Ônibus</option><option>AD</option><option>E - Carreta</option><option>AE</option></select></div>
                         <div class="col-md-4 d-none cnh-box"><label class="form-label">Registro</label><input type="text" name="cnh_num" class="form-control"></div>
                     </div>
                     <div class="text-end mt-4"><button type="button" class="btn btn-dark" onclick="switchTab('#formacao-tab')">Próximo <i class="fas fa-arrow-right"></i></button></div>
@@ -368,85 +327,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label class="form-label">Nível de Escolaridade</label>
-                                <select id="edu_nivel" class="form-select">
-                                    <option value="">Selecione...</option>
-                                    <option>Ensino Fundamental Incompleto</option><option>Ensino Fundamental Completo</option>
-                                    <option>Ensino Médio Incompleto</option><option>Ensino Médio Completo</option>
-                                    <option>Ensino Técnico</option>
-                                    <option>Ensino Superior (Graduação)</option>
-                                    <option>Pós-Graduação / MBA</option><option>Mestrado</option><option>Doutorado</option>
-                                </select>
+                                <select id="edu_nivel" class="form-select"><option value="">Selecione...</option><option>Ensino Fundamental Incompleto</option><option>Ensino Fundamental Completo</option><option>Ensino Médio Incompleto</option><option>Ensino Médio Completo</option><option>Ensino Técnico</option><option>Ensino Superior (Graduação)</option><option>Pós-Graduação / MBA</option><option>Mestrado</option><option>Doutorado</option></select>
                             </div>
                             <div class="col-md-8"><label class="form-label">Instituição / Escola</label><input type="text" id="edu_inst" class="form-control" placeholder="Ex: SENAI, PUC..."></div>
-                            <div class="col-md-4"><label class="form-label">Nome do Curso</label><input type="text" id="edu_curso" class="form-control" placeholder="Ex: Engenharia"></div>
+                            <div class="col-md-4"><label class="form-label">Nome do Curso</label><input type="text" id="edu_curso" class="form-control"></div>
                             <div class="col-md-4"><label class="form-label">Situação</label><select id="edu_status" class="form-select"><option>Concluído</option><option>Cursando</option><option>Trancado</option><option>Incompleto</option></select></div>
-                            <div class="col-md-2"><label class="form-label">Ano Início</label><input type="number" id="edu_ini" class="form-control" placeholder="2020"></div>
-                            <div class="col-md-2"><label class="form-label">Ano Fim</label><input type="number" id="edu_fim" class="form-control" placeholder="2024"></div>
-                            <div class="col-md-12 d-flex justify-content-between align-items-center">
-                                <div class="form-check"><input class="form-check-input" type="checkbox" id="edu_atual" onchange="toggleEduFim()"><label class="form-check-label small fw-bold" for="edu_atual">Cursando Atualmente</label></div>
-                                <button type="button" class="btn btn-add" onclick="addFormacao()"><i class="fas fa-plus-circle me-2"></i> Adicionar Curso</button>
-                            </div>
+                            <div class="col-md-2"><label class="form-label">Início</label><input type="number" id="edu_ini" class="form-control" placeholder="2020"></div>
+                            <div class="col-md-2"><label class="form-label">Fim</label><input type="number" id="edu_fim" class="form-control" placeholder="2024"></div>
+                            <div class="col-md-12 d-flex justify-content-between align-items-center"><div class="form-check"><input class="form-check-input" type="checkbox" id="edu_atual" onchange="toggleEduFim()"><label class="form-check-label small fw-bold" for="edu_atual">Cursando Atualmente</label></div><button type="button" class="btn btn-add" onclick="addFormacao()"><i class="fas fa-plus-circle me-2"></i> Adicionar Curso</button></div>
                         </div>
                     </div>
-                    <div id="lista-formacao-container"></div> <!-- VISUAL CARD -->
+                    <div id="lista-formacao-container"></div>
                     <input type="hidden" name="lista_formacoes_json" id="lista_formacoes_json">
                     <div class="text-end mt-4"><button type="button" class="btn btn-light border me-2" onclick="switchTab('#pessoal-tab')"><i class="fas fa-arrow-left"></i> Voltar</button><button type="button" class="btn btn-dark" onclick="switchTab('#exp-tab')">Próximo <i class="fas fa-arrow-right"></i></button></div>
                 </div>
 
-                <!-- ABA 3: EXPERIÊNCIA (REORGANIZADA) -->
+                <!-- ABA 3: EXPERIÊNCIA -->
                 <div class="tab-pane fade" id="exp">
-                    
-                    <!-- 1. OBJETIVO E IDIOMAS (MOVIDOS PARA O TOPO) -->
                     <h5 class="section-title">Objetivo e Qualificações</h5>
                     <div class="row g-3 mb-4">
                         <div class="col-md-12">
                             <label class="form-label fw-bold">Área de Interesse</label>
-                            <select name="area_interesse" class="form-select">
-                                <option value="">Selecione...</option>
-                                <optgroup label="Produção Industrial"><option>Operador de Produção</option><option>Auxiliar de Produção</option><option>Líder de Produção</option><option>Engenharia</option></optgroup>
-                                <optgroup label="Manutenção & Técnica"><option>Mecânico</option><option>Eletricista</option><option>Ferramentaria</option></optgroup>
-                                <optgroup label="Qualidade & Apoio"><option>Analista de Qualidade</option><option>Segurança do Trabalho</option><option>Logística</option></optgroup>
-                                <optgroup label="Administrativo"><option>RH</option><option>Financeiro</option><option>TI</option><option>Comercial</option></optgroup>
-                            </select>
+                            <select name="area_interesse" class="form-select"><option value="">Selecione...</option><optgroup label="Produção Industrial"><option>Operador de Produção</option><option>Auxiliar de Produção</option><option>Líder de Produção</option><option>Engenharia</option></optgroup><optgroup label="Manutenção"><option>Mecânico</option><option>Eletricista</option><option>Ferramentaria</option></optgroup><optgroup label="Qualidade & Apoio"><option>Analista de Qualidade</option><option>Segurança do Trabalho</option><option>Logística</option></optgroup><optgroup label="Administrativo"><option>RH</option><option>Financeiro</option><option>TI</option><option>Comercial</option></optgroup></select>
                         </div>
                         <div class="col-md-4"><label class="form-label">Pretensão Salarial</label><input type="text" name="pretensao" id="dinheiro" class="form-control" placeholder="R$ 0,00"></div>
-                        <div class="col-md-4">
-                            <label class="form-label">Nível de Inglês</label>
-                            <select name="ingles" class="form-select"><option value="Não possuo">Não possuo</option><option value="Básico">Básico</option><option value="Intermediário">Intermediário</option><option value="Avançado">Avançado</option><option value="Fluente">Fluente</option></select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Nível de Espanhol</label>
-                            <select name="espanhol" class="form-select"><option value="Não possuo">Não possuo</option><option value="Básico">Básico</option><option value="Intermediário">Intermediário</option><option value="Avançado">Avançado</option><option value="Fluente">Fluente</option></select>
-                        </div>
+                        <div class="col-md-4"><label class="form-label">Inglês</label><select name="ingles" class="form-select"><option value="Não possuo">Não possuo</option><option value="Básico">Básico</option><option value="Intermediário">Intermediário</option><option value="Avançado">Avançado</option><option value="Fluente">Fluente</option></select></div>
+                        <div class="col-md-4"><label class="form-label">Espanhol</label><select name="espanhol" class="form-select"><option value="Não possuo">Não possuo</option><option value="Básico">Básico</option><option value="Intermediário">Intermediário</option><option value="Avançado">Avançado</option><option value="Fluente">Fluente</option></select></div>
                     </div>
 
-                    <!-- 2. HISTÓRICO PROFISSIONAL -->
                     <h5 class="section-title mt-5">Histórico Profissional</h5>
-                    
                     <div class="alert alert-secondary border-0 mb-4 d-flex align-items-center"><div class="form-check"><input class="form-check-input" type="checkbox" id="sem_experiencia" onchange="toggleSemExp()"><label class="form-check-label fw-bold">Não possuo experiência profissional (Primeiro Emprego)</label></div></div>
-
                     <div id="box_exp_form">
                         <div class="card bg-light border-0 shadow-sm p-4 mb-4">
-                            <h6 class="mb-3 text-muted">Adicionar Nova Experiência</h6>
                             <div class="row g-3">
                                 <div class="col-md-6"><label class="form-label">Empresa</label><input type="text" id="exp_empresa" class="form-control"></div>
                                 <div class="col-md-6"><label class="form-label">Cargo</label><input type="text" id="exp_cargo" class="form-control"></div>
                                 <div class="col-md-3"><label class="form-label">Início</label><input type="date" id="exp_ini" class="form-control"></div>
                                 <div class="col-md-3"><label class="form-label">Fim</label><input type="date" id="exp_fim" class="form-control"></div>
-                                <div class="col-md-12">
-                                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="exp_atual" onchange="toggleExpFim()"><label class="form-check-label small fw-bold">Trabalho Atual</label></div>
-                                    <label class="form-label">Atividades Realizadas</label><textarea id="exp_desc" class="form-control" rows="2"></textarea>
-                                </div>
+                                <div class="col-md-12"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="exp_atual" onchange="toggleExpFim()"><label class="form-check-label small fw-bold">Trabalho Atual</label></div><label class="form-label">Atividades</label><textarea id="exp_desc" class="form-control" rows="2"></textarea></div>
                                 <div class="col-md-12 text-end"><button type="button" class="btn btn-add" onclick="addExp()">+ Adicionar ao Histórico</button></div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- VISUAL GRID CARDS (MUDANÇA AQUI) -->
-                    <div id="lista-exp-container" class="mb-4">
-                        <div class="exp-empty">Nenhuma experiência adicionada ainda.</div>
-                    </div>
-                    
+                    <div id="lista-exp-container" class="mb-4"><div class="exp-empty">Nenhuma experiência adicionada ainda.</div></div>
                     <input type="hidden" name="lista_experiencias_json" id="lista_experiencias_json">
                     
                     <div class="mt-4"><label class="form-label">Observações / Resumo Profissional / Cursos Extras</label><textarea name="resumo_profissional" id="resumo_profissional" class="form-control" rows="3"></textarea></div>
@@ -457,11 +380,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="tab-pane fade" id="anexo">
                     <div class="col-md-6 offset-md-3 text-center py-4">
                         <h5 class="mb-3">Anexar Currículo</h5>
-                        <div class="card border-dashed p-4 mb-3">
-                            <input type="file" name="cv" id="cv" class="form-control form-control-lg">
-                            <small class="text-muted mt-2 d-block">PDF ou DOCX</small>
+                        <div class="card border-dashed p-4 mb-3"><input type="file" name="cv" id="cv" class="form-control form-control-lg"><small class="text-muted mt-2 d-block">PDF ou DOCX</small></div>
+                        
+                        <!-- LGPD -->
+                        <div class="alert alert-light text-start border mt-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" required id="chk_lgpd">
+                                <label class="form-check-label" for="chk_lgpd">Li e aceito a <a href="#" data-bs-toggle="modal" data-bs-target="#modalLGPD">Política de Privacidade (LGPD)</a> e autorizo o tratamento dos meus dados para fins de recrutamento.</label>
+                            </div>
                         </div>
-                        <button type="button" class="btn btn-success btn-lg w-100 shadow" onclick="validarTudo()">FINALIZAR E ENVIAR</button>
+
+                        <button type="button" class="btn btn-success btn-lg w-100 shadow mt-2" onclick="validarTudo()">FINALIZAR E ENVIAR</button>
                     </div>
                 </div>
             </div>
@@ -472,16 +401,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="modal fade" id="modalSaving" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content text-center p-5"><div class="spinner-border text-success mb-3"></div><h5>Salvando...</h5></div></div></div>
     <div class="modal fade" id="modalCepLoading" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content text-center p-4"><div class="spinner-border text-primary mb-3"></div><p class="mb-0">Buscando...</p></div></div></div>
     <div class="modal fade" id="modalErro"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5>Atenção</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><ul id="listaErros" class="text-danger fw-bold"></ul></div></div></div></div>
+    
+    <!-- MODAL LGPD -->
+    <div class="modal fade" id="modalLGPD"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5>Política de Privacidade e Proteção de Dados</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+        <p>A <strong>Cedro Têxtil</strong> está comprometida com a proteção de seus dados pessoais. Ao se cadastrar, você concorda com:</p>
+        <ul><li>Seus dados serão utilizados exclusivamente para processos seletivos.</li><li>Seu currículo ficará armazenado em nosso banco de talentos por tempo indeterminado ou até que solicite a exclusão.</li><li>Garantimos o sigilo das informações e não compartilhamos com terceiros sem autorização.</li></ul>
+        <p>Para exercer seus direitos de titular (acesso, correção, exclusão), entre em contato com nosso DPO.</p>
+    </div></div></div></div>
 
     <script>
         function switchTab(sel) { document.querySelector(sel).click(); window.scrollTo(0,0); }
+        
         function validarTudo() {
             let erros = [];
             if(!$('#cpf').val()) erros.push("CPF"); if(!$('#nome').val()) erros.push("Nome");
             if($('#sou_funcionario').is(':checked')) { if(!$('input[name="matricula"]').val()) erros.push("Matrícula"); if(!$('input[name="data_admissao"]').val()) erros.push("Data Admissão"); }
             if(!$('[name="area_interesse"]').val()) erros.push("Área de Interesse"); if(!$('#cv').val()) erros.push("Currículo");
-            if(erros.length > 0) { $('#listaErros').html(erros.map(e=>`<li>${e}</li>`).join('')); new bootstrap.Modal('#modalErro').show(); } 
-            else { new bootstrap.Modal('#modalSaving').show(); document.getElementById('mainForm').submit(); }
+            if(!$('#chk_lgpd').is(':checked')) erros.push("Aceite os termos da LGPD");
+            
+            if(erros.length > 0) { $('#listaErros').html(erros.map(e=>`<li>${e}</li>`).join('')); new bootstrap.Modal(document.getElementById('modalErro')).show(); } 
+            else { new bootstrap.Modal(document.getElementById('modalSaving')).show(); document.getElementById('mainForm').submit(); }
         }
 
         // Toggles
@@ -495,7 +434,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // GRID FORMAÇÃO (Visual Card)
         let listaFormacao = [];
-        function toggleEduFim() { let chk = document.getElementById('edu_atual').checked; if(chk) $('#edu_fim').val('').prop('disabled', true); else $('#edu_fim').prop('disabled', false); }
+        function toggleEduFim() { let chk = document.getElementById('edu_atual').checked; if(chk) { $('#edu_fim').val('').prop('disabled', true); } else { $('#edu_fim').prop('disabled', false); } }
         function addFormacao() {
             let nivel = $('#edu_nivel').val(); let inst = $('#edu_inst').val();
             if(!nivel || !inst) return alert('Preencha Nível e Instituição');
@@ -504,13 +443,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $('#edu_inst').val(''); $('#edu_curso').val(''); $('#edu_ini').val(''); $('#edu_fim').val('');
         }
         function renderFormacao() {
-            if(listaFormacao.length === 0) { $('#lista-formacao-container').html('<div class="exp-empty">Nenhum curso adicionado.</div>'); return; }
+            if(listaFormacao.length === 0) { $('#lista-formacao-container').html(''); return; }
             let html = listaFormacao.map((i,x)=>`
-                <div class="exp-card" style="border-left-color: #6610f2;">
-                    <i class="fas fa-trash trash-btn btn-del" onclick="listaFormacao.splice(${x},1);renderFormacao()"></i>
-                    <h6>${i.nivel} - ${i.curso}</h6>
-                    <p class="small text-muted mb-1">${i.instituicao}</p>
-                    <span class="badge bg-secondary">${i.status}</span> <small>(${i.inicio} - ${i.conclusao})</small>
+                <div class="exp-card" style="border-left: 4px solid #6610f2; background:#f8f9fa; padding:10px; margin-bottom:5px; border-radius:4px; position:relative;">
+                    <i class="fas fa-trash trash-btn btn-del" style="position:absolute; right:10px; cursor:pointer; color:red;" onclick="listaFormacao.splice(${x},1);renderFormacao()"></i>
+                    <h6 style="margin:0; font-weight:bold;">${i.nivel} - ${i.curso}</h6>
+                    <small class="text-muted">${i.instituicao} (${i.inicio} - ${i.conclusao})</small>
                 </div>
             `).join('');
             $('#lista-formacao-container').html(html);
@@ -521,10 +459,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         let listaExp = [];
         function toggleExpFim() { let chk = document.getElementById('exp_atual').checked; if(chk) $('#exp_fim').val('').prop('disabled', true); else $('#exp_fim').prop('disabled', false); }
         function addExp() {
-            let item = {
-                empresa: $('#exp_empresa').val(), cargo: $('#exp_cargo').val(),
-                inicio: $('#exp_ini').val(), fim: $('#exp_fim').val(), atual: $('#exp_atual').is(':checked')?1:0, descricao: $('#exp_desc').val()
-            };
+            let item = { empresa: $('#exp_empresa').val(), cargo: $('#exp_cargo').val(), inicio: $('#exp_ini').val(), fim: $('#exp_fim').val(), atual: $('#exp_atual').is(':checked')?1:0, descricao: $('#exp_desc').val() };
             if(!item.empresa) return alert('Informe a Empresa.');
             listaExp.push(item); renderExp();
             $('#exp_empresa').val(''); $('#exp_desc').val('');
@@ -532,11 +467,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function renderExp() {
             if(listaExp.length === 0) { $('#lista-exp-container').html('<div class="exp-empty">Nenhuma experiência adicionada.</div>'); return; }
             let html = listaExp.map((i,x)=>`
-                <div class="exp-card" style="border-left-color: #000;">
-                    <i class="fas fa-trash trash-btn btn-del" onclick="listaExp.splice(${x},1);renderExp()"></i>
-                    <h6>${i.empresa} <span class="badge bg-dark">${i.cargo}</span></h6>
-                    <p class="small text-muted mb-2"><i class="far fa-calendar-alt"></i> ${i.atual?'Atualmente':i.inicio+' até '+i.fim}</p>
-                    <p>${i.descricao}</p>
+                <div class="exp-card" style="border-left: 4px solid #000; background:#f8f9fa; padding:10px; margin-bottom:5px; border-radius:4px; position:relative;">
+                    <i class="fas fa-trash trash-btn btn-del" style="position:absolute; right:10px; cursor:pointer; color:red;" onclick="listaExp.splice(${x},1);renderExp()"></i>
+                    <h6 style="margin:0; font-weight:bold;">${i.empresa} <span class="badge bg-dark">${i.cargo}</span></h6>
+                    <small class="text-muted d-block mb-1">${i.atual?'Atualmente':i.inicio+' até '+i.fim}</small>
+                    <small>${i.descricao}</small>
                 </div>
             `).join('');
             $('#lista-exp-container').html(html);
